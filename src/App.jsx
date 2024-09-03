@@ -3,6 +3,7 @@ import './index.css';
 import '@picocss/pico/css/pico.min.css'; 
 import imagen from './assets/belgrano.png';
 import Footer from './components/Footer'; 
+import Table from './components/Table';
 
 function App() {
   const [formData, setFormData] = useState({
@@ -13,6 +14,8 @@ function App() {
   });
 
   const [error, setError] = useState('');
+  const [data, setData] = useState([]);
+  const [nextId, setNextId] = useState(1); // Inicializar el ID
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -41,7 +44,7 @@ function App() {
       return;
     }
 
-    // Validacion de que en la edad no hay letras y sea menor a 150
+    // Validación de que en la edad no haya letras y sea menor a 150
     const abc = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
     const edadNumber = Number(formData.edad);
@@ -57,24 +60,24 @@ function App() {
       return;
     }
 
-    // Valido el telefono usando epxresion regular
-    /*
-      - `^` : *Inicio de la cadena*.
-      - `\+` : *Un signo más (`+`) literal*.
-      - `\d{2}` : **Exactamente dos dígitos*.
-      - ` ` : *Un espacio literal**.
-      - `\d{5,}` : *Cinco o más dígitos*.
-      - `$` : *Fin de la cadena*.
-    */
+    // Validación del teléfono usando expresión regular
     const phonePattern = /^\+\d{2} \d{5,}$/;
     if (!phonePattern.test(formData.telefono)) {
       setError('El teléfono debe estar en el formato +XX XXXXX.');
       return;
     }
 
-    // Si pasa todas las validaciones, borra el error y muestra los datos
+    // Si pasa todas las validaciones, borra el error y agrega los datos a la tabla
+    const newItem = { ...formData, id: nextId };
+    setData([...data, newItem]);
+    setFormData({ nombre: '', apellido: '', edad: '', telefono: '' }); // Limpiar formulario
     setError('');
-    console.log('Datos enviados:', formData);
+    setNextId(nextId + 1); // Actualizar el próximo ID
+    console.log('Datos enviados:', newItem);
+  };
+
+  const handleDelete = (id) => {
+    setData(data.filter(item => item.id !== id));
   };
 
   return (
@@ -104,8 +107,8 @@ function App() {
           />
         </div>
 
-        <div className="inline-fields">
-          <div className="field">
+        <div className="camposEnLinea">
+          <div className="campos">
             <label htmlFor="edad">Edad:</label>
             <input 
               type="text" 
@@ -115,7 +118,7 @@ function App() {
               onChange={handleChange}
             />
           </div>
-          <div className="field">
+          <div className="campos">
             <label htmlFor="telefono">Teléfono:</label>
             <input 
               type="text" 
@@ -132,6 +135,8 @@ function App() {
 
       {error && <p className="error-message">{error}</p>}
 
+      <Table data={data} onDelete={handleDelete} />
+      
       <Footer /> 
     </div>
   );
