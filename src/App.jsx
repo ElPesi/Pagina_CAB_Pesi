@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import './index.css';
-import '@picocss/pico/css/pico.min.css'; 
 import imagen from './assets/belgrano.png';
 import Footer from './components/Footer'; 
 import Table from './components/Table';
@@ -15,7 +15,17 @@ function App() {
 
   const [error, setError] = useState('');
   const [data, setData] = useState([]);
-  const [nextId, setNextId] = useState(1); // Inicializar el ID
+
+  useEffect(() => {
+    // Obtener los datos de la base de datos cuando se monta el componente
+    axios.get('http://localhost:3000/users')
+      .then(response => {
+        setData(response.data);
+      })
+      .catch(error => {
+        console.error('Error al obtener los datos:', error);
+      });
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -28,13 +38,12 @@ function App() {
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    // Validación del nombre
+    // Validaciones
     if (formData.nombre.length < 5) {
       setError('El nombre debe tener al menos 5 caracteres.');
       return;
     }
 
-    // Validación de que nombre y apellido no contengan números
     if (formData.nombre.split('').some(char => '0123456789'.includes(char))) {
       setError('El nombre no debe contener números.');
       return;
@@ -44,40 +53,38 @@ function App() {
       return;
     }
 
-    // Validación de que en la edad no haya letras y sea menor a 150
-    const abc = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-
     const edadNumber = Number(formData.edad);
-    const edadStr = formData.edad;
-
-    if (abc.some(letter => edadStr.includes(letter))) {
-      setError('La edad no debe contener letras.');
-      return;
-    }
-  
-    if (edadNumber >= 150) {
+    if (isNaN(edadNumber) || edadNumber >= 150) {
       setError('La edad debe ser un número menor a 150.');
       return;
     }
 
-    // Validación del teléfono usando expresión regular
     const phonePattern = /^\+\d{2} \d{5,}$/;
     if (!phonePattern.test(formData.telefono)) {
       setError('El teléfono debe estar en el formato +XX XXXXX.');
       return;
     }
 
-    // Si pasa todas las validaciones, borra el error y agrega los datos a la tabla
-    const newItem = { ...formData, id: nextId };
-    setData([...data, newItem]);
-    setFormData({ nombre: '', apellido: '', edad: '', telefono: '' }); // Limpiar formulario
-    setError('');
-    setNextId(nextId + 1); // Actualizar el próximo ID
-    console.log('Datos enviados:', newItem);
+    // Enviar datos a la base de datos
+    axios.post('http://localhost:3000/users', formData)
+      .then(response => {
+        setData([...data, response.data]);
+        setFormData({ nombre: '', apellido: '', edad: '', telefono: '' });
+        setError('');
+      })
+      .catch(error => {
+        console.error('Error al enviar los datos:', error);
+      });
   };
 
   const handleDelete = (id) => {
-    setData(data.filter(item => item.id !== id));
+    axios.delete(`http://localhost:3000/users/${id}`)
+      .then(() => {
+        setData(data.filter(item => item.id !== id));
+      })
+      .catch(error => {
+        console.error('Error al eliminar el dato:', error);
+      });
   };
 
   return (
